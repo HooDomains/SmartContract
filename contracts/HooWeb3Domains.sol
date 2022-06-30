@@ -2346,9 +2346,21 @@ abstract contract WhiteList is AdminControl {
     mapping(address => uint256) public _whiteList;
 	
 	bool public isWhiteListActive = false;
+	
+	bool public isWhiteList4Discount = false; // WL for discount
+	
+	uint256 public WhiteListDiscount = 0; // percent
 
     function setWhiteListActive(bool _isWhiteListActive) external onlyOwner {
         isWhiteListActive = _isWhiteListActive;
+    }
+	
+	function setWhiteList4Discount() external onlyOwner {
+        isWhiteList4Discount = !isWhiteList4Discount;
+    }
+	
+	function setWhiteListDiscount(uint256 amount) external onlyOwner {
+        WhiteListDiscount = amount;
     }
 
     function addWhiteLists(address[] calldata accounts, uint256 numbers) external onlyMinterController {
@@ -2438,6 +2450,8 @@ contract Web3Domains is ERC721, ERC721Enumerable, AdminControl, RecordStorage, W
 	uint256 private _3chartimes = 20;
 	
 	uint256 private _4chartimes = 5;
+	
+	uint256 private _5chartimes = 1;
 	
     modifier onlyApprovedOrOwner(uint256 tokenId) {
         require(
@@ -2596,34 +2610,57 @@ contract Web3Domains is ERC721, ERC721Enumerable, AdminControl, RecordStorage, W
 			require(bytes(name).length == 0, "This name is already reserved");
 		}
 		
-		
+		uint256 _WhiteListDiscount = 0;
 	    // Check WhiteList
 		if (isWhiteListActive == true){
 			uint256 numbers = _whiteList[msg.sender];
-			require(numbers > 0, "The address is not in the Whitelist");
-			require(numbers >= balanceOf(msg.sender), "Exceeded max available to purchase");
+			if (isWhiteList4Discount == false){
+				require(numbers > 0, "The address is not in the Whitelist");
+				require(numbers >= balanceOf(msg.sender), "Exceeded max available to purchase");
+			}
+			else{
+				if (numbers > 0){
+					_WhiteListDiscount = WhiteListDiscount;
+				}
+			}
 		}
 		
 		if (_length == 2)
 		{
+			uint256 __price2 = getPrice().mul(_2chartimes);
+			if (_WhiteListDiscount > 0){
+				__price2 = __price2 * ((100-_WhiteListDiscount)/100);
+			}
 			require(_saleTwoCharIsActive == true, "2 Character domain names need to be allowed to buy");
 			
-			require(msg.value >= getPrice().mul(_2chartimes), "Insufficient Token or Token value sent is not correct");
+			require(msg.value >= __price2, "Insufficient Token or Token value sent is not correct");
 		}
 	
 		if (_length == 3)
 		{
-			require(msg.value >= getPrice().mul(_3chartimes), "Insufficient Token or Token value sent is not correct");
+			uint256 __price3 = getPrice().mul(_3chartimes);
+			if (_WhiteListDiscount > 0){
+				__price3 = __price3 * ((100-_WhiteListDiscount)/100);
+			}
+			require(msg.value >= __price3, "Insufficient Token or Token value sent is not correct");
 		}
 		
 		if (_length == 4)
 		{
-			require(msg.value >= getPrice().mul(_4chartimes), "Insufficient Token or Token value sent is not correct");
+			uint256 __price4 = getPrice().mul(_4chartimes);
+			if (_WhiteListDiscount > 0){
+				__price4 = __price4 * ((100-_WhiteListDiscount)/100);
+			}
+			require(msg.value >= __price4, "Insufficient Token or Token value sent is not correct");
 		}
 		
 		if (_length >= 5)
 		{
-			require(msg.value >= getPrice(), "Insufficient Token or Token value sent is not correct");
+			uint256 __price5 = getPrice();
+			if (_WhiteListDiscount > 0){
+				__price5 = __price5 * ((100-_WhiteListDiscount)/100);
+			}
+			require(msg.value >= __price5, "Insufficient Token or Token value sent is not correct");
 		}
 		
 		string memory _domain = StringUtil.toLower(domain);
